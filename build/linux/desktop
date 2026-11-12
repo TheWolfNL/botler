@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Botler
+Comment=Tells you when your YubiKey wants a touch
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/botler %u
+Terminal=false
+Type=Application
+Icon=botler
+Categories=Utility;
+StartupWMClass=botler
+
+ 

@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Botler</title>
+<meta name="description" content="A macOS menu bar app that tells you when your AI coding agent is done, hit an error, or needs your input.">
+<link rel="icon" href="appicon.svg" type="image/svg+xml">
+<style>
+:root {
+  --bg: #f3f8f8;
+  --fg: #0f1f22;
+  --muted: #52676a;
+  --card: #ffffff;
+  --line: #d8e5e5;
+  --code-bg: #0b1a1d;
+  --code-fg: #e3eff0;
+  --accent: #11707d;
+  --desk: linear-gradient(160deg, #dcebea 0%, #c3d9d8 100%);
+  --brand: linear-gradient(140deg, #4cc3bd 0%, #1f9a9c 30%, #11707d 65%, #0a4655 100%);
+  --done: linear-gradient(135deg, #43b06a 0%, #24814b 50%, #10522f 100%);
+  --failed: linear-gradient(135deg, #e7574d 0%, #b42d2b 50%, #6f1519 100%);
+  --input: linear-gradient(135deg, #4f9ded 0%, #2866c8 50%, #173d86 100%);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #081315;
+    --fg: #e6f0f0;
+    --muted: #93aaad;
+    --card: #0f1d20;
+    --line: #1f3236;
+    --code-bg: #050c0e;
+    --accent: #5fd3cc;
+    --desk: linear-gradient(160deg, #13262a 0%, #0a1619 100%);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #081315;
+  --fg: #e6f0f0;
+  --muted: #93aaad;
+  --card: #0f1d20;
+  --line: #1f3236;
+  --code-bg: #050c0e;
+  --accent: #5fd3cc;
+  --desk: linear-gradient(160deg, #13262a 0%, #0a1619 100%);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+}
+a { color: var(--accent); }
+code, pre, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+
+/* Hero */
+.hero {
+  background: var(--brand);
+  color: #fff;
+  padding: 72px 0 64px;
+  text-align: center;
+}
+.hero img { width: 128px; height: 128px; filter: drop-shadow(0 10px 24px rgba(0, 35, 42, 0.4)); }
+.hero h1 { margin: 12px 0 6px; font-size: clamp(36px, 7vw, 56px); letter-spacing: -0.02em; line-height: 1.1; text-shadow: 0 2px 6px rgba(0, 35, 42, 0.25); }
+.hero p { margin: 0 auto; max-width: 34em; font-size: clamp(17px, 2.4vw, 20px); color: rgba(255, 255, 255, 0.92); }
+.hero .actions { margin-top: 28px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 999px;
+  font-weight: 600; font-size: 15px; text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.85); color: #fff;
+}
+.btn.primary { background: #fff; color: #0a4655; border-color: #fff; }
+.btn:hover { filter: brightness(1.08); }
+
+section { padding: 64px 0 8px; }
+h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.01em; margin: 0 0 8px; }
+.lede { color: var(--muted); margin: 0 0 28px; max-width: 40em; }
+
+/* Demo stage */
+.desk {
+  position: relative;
+  border-radius: 18px;
+  background: var(--desk);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  min-height: 460px;
+  box-shadow: 0 20px 50px rgba(0, 30, 35, 0.12);
+}
+.menubar {
+  height: 30px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 14px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px);
+  font-size: 13px; color: #1d1d1f;
+}
+:root[data-theme="dark"] .menubar { background: rgba(0, 0, 0, 0.35); color: #f2f2f7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .menubar { background: rgba(0, 0, 0, 0.35); color: #f2f2f7; } }
+.tray { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+.tray svg { width: 17px; height: 17px; }
+.tray .flash { display: none; }
+.desk.alerting .tray .flash { display: inline; }
+.menubar .dim { opacity: 0.7; }
+
+.banner {
+  position: absolute; top: 40px; right: 12px; z-index: 2;
+  width: min(390px, calc(100% - 24px));
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px 16px 12px;
+  background: var(--done);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  transform: translateX(115%); opacity: 0;
+  transition: transform 280ms cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 280ms;
+}
+.banner.failed { background: var(--failed); }
+.banner.input { background: var(--input); }
+.desk.alerting .banner { transform: none; opacity: 1; }
+.banner img { width: 50px; height: 50px; flex: none; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)); }
+.banner .text { min-width: 0; }
+.banner .title { font-size: 14px; font-weight: 600; }
+.banner .meta { font-size: 11px; color: rgba(255, 255, 255, 0.75); margin-top: 1px; }
+.banner .message { font-size: 12px; margin-top: 3px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.banner .timer { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: rgba(255, 255, 255, 0.55); transform-origin: left; }
+.desk.alerting .banner.done .timer { animation: drain 3.4s linear forwards; }
+.banner:not(.done) .timer { display: none; }
+.banner .pulse { position: absolute; right: 12px; bottom: 12px; width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px #fff; animation: pulse 1s ease-in-out infinite; }
+.banner.done .pulse { display: none; }
+
+.term {
+  position: absolute; left: 24px; bottom: 24px;
+  width: min(620px, calc(100% - 48px));
+  background: #0d1a1c;
+  color: #e3eff0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.term .bar { height: 28px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: #152a2d; }
+.term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2f4a4e; }
+.term .bar span { margin-left: auto; margin-right: auto; font-size: 12px; color: #86a3a6; transform: translateX(-24px); }
+.term pre { margin: 0; padding: 14px 16px 18px; min-height: 230px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.term .user { color: #86a3a6; }
+.term .spark { color: #1f9a9c; }
+.term .tool { color: #8fd0a4; }
+.term .ask { color: #7fb6ff; }
+.term .err { color: #ff8a80; }
+.term .dim { color: #6f8a8d; }
+.term .cursor { display: inline-block; width: 8px; height: 1.1em; vertical-align: text-bottom; background: #e3eff0; animation: blink 1s steps(2, start) infinite; }
+
+.cues { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+.cue { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.cue h3 { margin: 0 0 4px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+.cue p { margin: 0; color: var(--muted); font-size: 14.5px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot.done { background: var(--done); }
+.dot.failed { background: var(--failed); }
+.dot.input { background: var(--input); }
+.kinds { display: flex; gap: 6px; }
+
+/* Install */
+.steps { counter-reset: step; display: grid; gap: 18px; padding: 0; margin: 0; list-style: none; }
+.steps > li { counter-increment: step; position: relative; padding-left: 48px; min-width: 0; }
+.steps > li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 0;
+  width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--brand); color: #fff; font-weight: 700; font-size: 15px;
+}
+.steps h3 { margin: 3px 0 6px; font-size: 18px; }
+.steps p { margin: 0 0 10px; color: var(--muted); }
+.code {
+  position: relative;
+  margin: 0 0 10px;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.code pre { margin: 0; padding: 14px 52px 14px 16px; font-size: 13.5px; line-height: 1.6; overflow-x: auto; }
+.code .file { display: block; padding: 8px 16px 0; font-size: 12px; color: #86a3a6; }
+.copy {
+  position: absolute; top: 8px; right: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.06);
+  color: #e3eff0; border-radius: 7px; padding: 4px 8px; font: 12px/1.2 inherit; cursor: pointer;
+}
+.copy:hover { background: rgba(255, 255, 255, 0.14); }
+.note { background: var(--card); border: 1px solid var(--line); border-left: 4px solid #1f9a9c; border-radius: 10px; padding: 12px 16px; color: var(--muted); font-size: 14.5px; margin-top: 28px; }
+.note + .note { margin-top: 12px; }
+.note code, .steps p code, .lede code, .cue code { background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; font-size: 0.9em; color: var(--fg); }
+
+.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 0 0 20px; }
+.tool { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.tool .muted { margin-left: auto; }
+.dot.pending { background: transparent; border: 2px dashed var(--muted); width: 12px; height: 12px; }
+.btn-request { display: inline-flex; padding: 10px 20px; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 600; font-size: 15px; text-decoration: none; }
+.btn-request:hover { filter: brightness(1.08); }
+.changelog-section { padding-top: 40px; }
+.changelog { border: 1px solid var(--line); border-radius: 12px; background: var(--card); font-size: 14.5px; }
+.changelog summary { cursor: pointer; padding: 12px 16px; color: var(--muted); font-weight: 600; }
+.changelog summary:hover { color: var(--fg); }
+.changelog #releases { padding: 0 16px 8px; }
+.release { border-top: 1px solid var(--line); padding: 12px 0; }
+.release h3 { margin: 0; font-size: 15px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.release h3 a { color: var(--fg); text-decoration: none; }
+.release time, .muted { color: var(--muted); font-weight: 400; font-size: 13px; }
+.release ul { margin: 6px 0 0; padding-left: 20px; color: var(--muted); }
+.release li { margin: 2px 0; overflow-wrap: anywhere; }
+
+footer { margin-top: 48px; padding: 28px 0 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; gap: 8px 20px; flex-wrap: wrap; justify-content: space-between; }
+
+@keyframes pulse { 50% { opacity: 0.25; transform: scale(0.7); } }
+@keyframes blink { to { visibility: hidden; } }
+@keyframes drain { to { transform: scaleX(0); } }
+
+@media (max-width: 720px) {
+  .cues { grid-template-columns: 1fr; }
+  .desk { min-height: 0; display: flex; flex-direction: column; }
+  .banner { position: relative; top: auto; right: auto; width: auto; margin: 12px 12px 0; }
+  .term { position: relative; left: auto; bottom: auto; width: auto; margin: 12px; }
+  .term pre { font-size: 12px; min-height: 250px; }
+  .menubar .clock-date { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .banner { transition: none; }
+  .banner .pulse, .term .cursor { animation: none; }
+  .desk.alerting .banner.done .timer { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <img src="appicon.svg" alt="Botler icon: a smiling robot with a monocle, a tuxedo and a burgundy bow tie">
+    <h1>Botler</h1>
+    <p>At your service when your AI agent is done, stuck, or waiting on you.</p>
+    <div class="actions">
+      <a class="btn primary" href="#install">Install</a>
+      <a class="btn" href="https://github.com/TheWolfNL/botler">View on GitHub</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="demo">
+  <div class="wrap">
+    <h2>Go make coffee. The butler will call you.</h2>
+    <p class="lede">Hooks in your AI coding tool tell Botler when a session finishes, fails or stops to ask you something. It slides a banner onto the screen you're working on, plays the sound you picked for that outcome and flashes the menu bar. Click the banner to jump straight back to the terminal or editor running that session.</p>
+
+    <div class="desk" id="desk" aria-label="Animated example: Claude Code finishes, asks for permission and hits an API error, each announced by a banner">
+      <div class="menubar">
+        <span class="tray" title="Botler menu bar icon">
+          <svg viewBox="0 0 22 22" aria-hidden="true"><defs><mask id="face"><rect width="22" height="22" fill="#fff"/><circle cx="8.6" cy="9.4" r="1.5" fill="#000"/><circle cx="13.4" cy="9.4" r="1.5" fill="#000"/></mask></defs><g fill="currentColor"><rect x="10.3" y="2.6" width="1.4" height="3" rx="0.7"/><circle cx="11" cy="2.4" r="1.4"/><rect x="4.6" y="5.2" width="12.8" height="8.6" rx="3" mask="url(#face)"/><rect x="3" y="8" width="1.2" height="3" rx="0.6"/><rect x="17.8" y="8" width="1.2" height="3" rx="0.6"/><path d="M11 17.4 L6.6 15.2 L6.6 19.6 Z"/><path d="M11 17.4 L15.4 15.2 L15.4 19.6 Z"/><circle cx="11" cy="17.4" r="1.3"/></g></svg>
+          <span class="flash" id="tray-flash">Done</span>
+        </span>
+        <span class="dim clock-date">Thu 12 Nov</span>
+        <span class="dim">09:41</span>
+      </div>
+
+      <div class="banner done" id="banner" role="status" aria-live="polite">
+        <img src="appicon.svg" alt="">
+        <div class="text">
+          <div class="title" id="b-title">Claude is done</div>
+          <div class="meta" id="b-meta">api-gateway · in Ghostty</div>
+          <div class="message" id="b-message">All tests pass. I've pushed the branch and opened a draft PR.</div>
+        </div>
+        <span class="timer"></span>
+        <span class="pulse"></span>
+      </div>
+
+      <div class="term">
+        <div class="bar"><i></i><i></i><i></i><span>claude · ~/code/api-gateway</span></div>
+        <pre id="term"><span class="user">&gt; fix the flaky rate-limit test and open a PR</span>
+<span class="spark">✻</span> All tests pass. I've pushed the branch and opened a draft PR.</pre>
+      </div>
+    </div>
+
+    <div class="cues">
+      <div class="cue"><h3><span class="kinds"><span class="dot done"></span><span class="dot failed"></span><span class="dot input"></span></span> Three outcomes</h3><p>Green when Claude is done, red when a turn fails (rate limits, API errors), blue when it needs your permission or an answer. Switch each one off, or keep just its sound or just its banner, with its own sound and timing.</p></div>
+      <div class="cue"><h3>Click to jump back</h3><p>The banner names the project and the app running the session. A click brings that terminal or editor to the front. Several sessions stack instead of overwriting each other.</p></div>
+      <div class="cue"><h3>Quiet when you're there</h3><p>If you're already looking at the app running that session, nothing pops up. Successes fade after 10 seconds; failures and questions stay until you dismiss them.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Install</h2>
+    <p class="lede">For macOS 12 or later. Botler currently works with <a href="https://code.claude.com/docs">Claude Code</a> (<code>StopFailure</code> needs a recent version); <a href="#tools">ask for your tool</a> if you use another.</p>
+
+    <ol class="steps">
+      <li>
+        <h3>Install the app</h3>
+        <div class="code"><pre>brew install --cask thewolfnl/tap/botler</pre></div>
+        <p>This installs <code>Botler.app</code> and the <code>botler</code> command.</p>
+      </li>
+      <li>
+        <h3>Open it and install the hooks</h3>
+        <p>On first launch Botler offers to add its hooks to <code>~/.claude/settings.json</code>. Your other hooks and settings stay as they are, and you can add or remove the hooks from <strong>Settings</strong> at any time. Prefer the terminal?</p>
+        <div class="code"><pre>botler hooks install</pre></div>
+        <p>This adds a <code>Stop</code>, <code>StopFailure</code> and <code>Notification</code> hook like the one below; new Claude Code sessions pick them up. The hook does nothing if the app has been removed. Turn on <strong>Start at login</strong> in Settings while you're there.</p>
+        <div class="code"><span class="file">~/.claude/settings.json</span><pre>"Stop": [{ "hooks": [{
+  "type": "command",
+  "command": "[ ! -x \"/Applications/Botler.app/Contents/MacOS/botler\" ] || \"/Applications/Botler.app/Contents/MacOS/botler\" hook claude",
+  "timeout": 10
+}] }]</pre></div>
+      </li>
+      <li>
+        <h3>Try it</h3>
+        <div class="code"><pre>botler notify done "Dinner is served"
+botler notify input "May I take your coat?"
+botler notify failed "We appear to be out of tea"</pre></div>
+      </li>
+    </ol>
+
+    <div class="note">The app is ad-hoc signed, not notarized. The Homebrew cask clears macOS's quarantine flag so Gatekeeper lets it open.</div>
+    <div class="note">Uninstalling? The hooks go quiet once the app is gone. To remove them from Claude Code's settings as well, run <code>botler hooks uninstall</code> (or use Settings) first.</div>
+  </div>
+</section>
+
+<section id="tools">
+  <div class="wrap">
+    <h2>Using another AI tool?</h2>
+    <p class="lede">Botler talks to each tool through a small adapter that reads its hook events and installs its hooks. Claude Code is the first. If you use Codex, Gemini CLI, Cursor, Copilot CLI or something else, open an issue: say which tool, link its hooks or notification docs, and which of done, failed and needs input it can report.</p>
+    <div class="tools">
+      <div class="tool"><span class="dot done"></span><strong>Claude Code</strong><span class="muted">Supported</span></div>
+      <div class="tool"><span class="dot pending"></span><strong>Your tool here</strong><span class="muted">Request it</span></div>
+    </div>
+    <p><a class="btn-request" href="https://github.com/TheWolfNL/botler/issues/new?labels=agent-request&amp;title=Support+for+%3Ctool%3E&amp;body=Which+AI+tool+would+you+like+Botler+to+support%3F%0A%0ALink+to+its+hooks+or+notification+docs%3A%0A%0AWhich+events+does+it+expose+%28done%2C+failed%2C+needs+input%29%3F">Request support for your AI tool</a></p>
+  </div>
+</section>
+
+<section id="changelog" class="changelog-section">
+  <div class="wrap">
+    <details class="changelog">
+      <summary>Changelog</summary>
+      <div id="releases"><p class="muted">Loading releases…</p></div>
+    </details>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Botler · <a href="https://github.com/TheWolfNL/botler/blob/main/LICENSE.md">PolyForm Shield 1.0.0</a></span>
+    <span>Not affiliated with Anthropic. Claude is a trademark of Anthropic, PBC.</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  document.querySelectorAll(".code").forEach((block) => {
+    const button = document.createElement("button");
+    button.className = "copy";
+    button.type = "button";
+    button.textContent = "Copy";
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(block.querySelector("pre").textContent);
+        button.textContent = "Copied";
+      } catch {
+        button.textContent = "Select & copy";
+      }
+      setTimeout(() => { button.textContent = "Copy"; }, 1500);
+    });
+    block.append(button);
+  });
+
+  const releasesEl = document.getElementById("releases");
+  const releasesUrl = "https://github.com/TheWolfNL/botler/releases";
+  document.querySelector(".changelog").addEventListener("toggle", async function load(event) {
+    if (!event.target.open) return;
+    event.target.removeEventListener("toggle", load);
+    try {
+      const res = await fetch("https://api.github.com/repos/TheWolfNL/botler/releases?per_page=20");
+      if (!res.ok) throw new Error(res.status);
+      const releases = (await res.json()).filter((r) => !r.draft);
+      if (!releases.length) throw new Error("none");
+      releasesEl.replaceChildren(...releases.map((r) => {
+        const item = document.createElement("article");
+        item.className = "release";
+        const h = document.createElement("h3");
+        const a = Object.assign(document.createElement("a"), { href: r.html_url, textContent: r.tag_name });
+        const t = Object.assign(document.createElement("time"), {
+          dateTime: r.published_at,
+          textContent: new Date(r.published_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }),
+        });
+        h.append(a, t);
+        item.append(h);
+        const changes = (r.body || "").split(/\r?\n/).filter((l) => /^[-*] /.test(l)).map((l) => l.slice(2));
+        const ul = document.createElement("ul");
+        if (changes.length) {
+          ul.append(...changes.map((c) => Object.assign(document.createElement("li"), { textContent: c })));
+        } else {
+          const li = document.createElement("li");
+          li.append(Object.assign(document.createElement("a"), { href: r.html_url, textContent: "See what changed" }));
+          ul.append(li);
+        }
+        item.append(ul);
+        return item;
+      }));
+    } catch {
+      releasesEl.innerHTML = `<p class="muted">Couldn't load releases. See <a href="${releasesUrl}">GitHub releases</a>.</p>`;
+    }
+  });
+
+  const desk = document.getElementById("desk");
+  const term = document.getElementById("term");
+  const banner = document.getElementById("banner");
+  const bTitle = document.getElementById("b-title");
+  const bMeta = document.getElementById("b-meta");
+  const bMessage = document.getElementById("b-message");
+  const trayFlash = document.getElementById("tray-flash");
+
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    desk.classList.add("alerting");
+    return;
+  }
+
+  const scenes = [
+    {
+      prompt: "fix the flaky rate-limit test and open a PR",
+      work: ['<span class="tool">● Bash</span> <span class="dim">go test ./internal/ratelimit/...</span>', '<span class="dim">  ⎿ ok  ratelimit  0.42s</span>'],
+      reply: '<span class="spark">✻</span> All tests pass. I\'ve pushed the branch and opened a draft PR.',
+      kind: "done", title: "Claude is done", tray: "Done",
+      meta: "api-gateway · in Ghostty",
+      message: "All tests pass. I've pushed the branch and opened a draft PR.",
+    },
+    {
+      prompt: "clean up the old migration files",
+      work: ['<span class="tool">● Bash</span> <span class="dim">rm db/migrations/2023_*.sql</span>'],
+      reply: '<span class="ask">? Do you want to proceed?  ❯ 1. Yes   2. No</span>',
+      kind: "input", title: "Claude needs you", tray: "Needs you",
+      meta: "api-gateway · in Ghostty",
+      message: "Claude needs your permission to use Bash",
+    },
+    {
+      prompt: "now update the API docs",
+      work: ['<span class="dim">✻ Thinking…</span>'],
+      reply: '<span class="err">⎿ API Error: 529 Overloaded</span>',
+      kind: "failed", title: "Claude hit an error", tray: "Error",
+      meta: "api-gateway · in Ghostty",
+      message: "API Error: 529 Overloaded. Try again in a moment.",
+    },
+  ];
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+  const cursor = '<span class="cursor"></span>';
+
+  async function play() {
+    for (const s of scenes) {
+      let screen = "";
+      for (let i = 0; i <= s.prompt.length; i++) {
+        term.innerHTML = '<span class="user">&gt; ' + esc(s.prompt.slice(0, i)) + "</span>" + cursor;
+        await sleep(40 + Math.random() * 35);
+      }
+      screen = '<span class="user">&gt; ' + esc(s.prompt) + "</span>\n";
+      for (const line of s.work) {
+        await sleep(650);
+        screen += line + "\n";
+        term.innerHTML = screen + cursor;
+      }
+      await sleep(900);
+      screen += s.reply + "\n";
+      term.innerHTML = screen;
+      banner.className = "banner " + s.kind;
+      bTitle.textContent = s.title;
+      bMeta.textContent = s.meta;
+      bMessage.textContent = s.message;
+      trayFlash.textContent = s.tray;
+      desk.classList.add("alerting");
+      await sleep(3400);
+      desk.classList.remove("alerting");
+      await sleep(1200);
+    }
+  }
+
+  (async () => {
+    for (;;) await play();
+  })();
+})();
+</script>
+</body>
+</html>

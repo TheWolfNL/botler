@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="/style.css"/>
+    <title>Botler</title>
+</head>
+<body>
+<main>
+    <header>
+        <img src="/appicon.png" alt="" width="60" height="60"/>
+        <div>
+            <h1>Botler</h1>
+            <p class="sub">At your service when your AI agent is done, stuck, or waiting on you.</p>
+        </div>
+    </header>
+
+    <section id="hooks-prompt" class="callout" hidden>
+        <strong>Connect Botler to <span id="prompt-tools">your AI tools</span>?</strong>
+        <p>Botler adds its hooks to each tool's settings so it hears when a session finishes, fails or needs you.
+            Your other hooks and settings stay as they are.</p>
+        <div class="actions">
+            <button type="button" id="prompt-later">Not now</button>
+            <button type="button" id="prompt-install" class="primary">Install hooks</button>
+        </div>
+    </section>
+
+    <form id="settings">
+        <h2>Notifications</h2>
+        <div class="card" id="kinds"></div>
+
+        <h2>General</h2>
+        <div class="card">
+            <label class="row">Position
+                <select name="bannerPosition">
+                    <option value="topRight">Top right</option>
+                    <option value="topCenter">Top center</option>
+                    <option value="topLeft">Top left</option>
+                    <option value="bottomRight">Bottom right</option>
+                    <option value="bottomLeft">Bottom left</option>
+                </select>
+            </label>
+            <label class="row"><input type="checkbox" name="onlyWhenAway"/>
+                <span>Only when I'm elsewhere<small>Stay quiet while the app running that session is in front</small></span>
+            </label>
+            <label class="row"><input type="checkbox" name="trayFlash"/> Flash the status in the menu bar</label>
+            <label class="row">Menu bar icon
+                <select name="trayMode">
+                    <option value="always">Always</option>
+                    <option value="onNotify">Only while notifying</option>
+                    <option value="never">Never</option>
+                </select>
+            </label>
+            <label class="row"><input type="checkbox" name="launchAtLogin"/> Start at login</label>
+        </div>
+
+        <h2>AI tools</h2>
+        <div class="card">
+            <div id="agents"></div>
+            <div class="row">
+                <span>Using another AI tool?<small>Codex, Gemini CLI, Cursor… ask for it on GitHub</small></span>
+                <button type="button" id="request-agent">Request it</button>
+            </div>
+        </div>
+    </form>
+
+    <footer>
+        <span id="status" role="status"></span>
+        <span id="version"></span>
+    </footer>
+</main>
+
+<template id="kind-template">
+    <fieldset class="kind">
+        <div class="row">
+            <input type="checkbox" data-field="enabled" aria-label="Enable this event"/>
+            <span class="dot"></span>
+            <span class="kind-name"></span>
+            <button type="button" class="test" title="Show a test notification">Test</button>
+        </div>
+        <div class="row nested">
+            <input type="checkbox" class="icon-bubble" data-field="banner" aria-label="Show a notification"/> Notification
+            <select data-field="autoHide" title="How long the notification stays">
+                <option value="0">Until dismissed</option>
+                <option value="5">5 seconds</option>
+                <option value="10">10 seconds</option>
+                <option value="30">30 seconds</option>
+                <option value="60">1 minute</option>
+            </select>
+        </div>
+        <div class="row nested">
+            <input type="checkbox" class="icon-bell" data-field="sound" aria-label="Play a sound"/> Sound
+            <select data-field="soundName"></select>
+            <button type="button" class="preview" title="Preview sound">▶</button>
+            <button type="button" class="add-sound" title="Add your own sound file">＋</button>
+            <button type="button" class="remove-sound" title="Remove this custom sound">－</button>
+        </div>
+    </fieldset>
+</template>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
