@@ -208,6 +208,20 @@ h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.01em; margin: 0 0 8px
 .dot.pending { background: transparent; border: 2px dashed var(--muted); width: 12px; height: 12px; }
 .btn-request { display: inline-flex; padding: 10px 20px; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 600; font-size: 15px; text-decoration: none; }
 .btn-request:hover { filter: brightness(1.08); }
+.window { margin: 0 0 28px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0, 35, 42, 0.25); background: #0d1a1c; }
+.window .titlebar { height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #1b2c2f; }
+.window .titlebar i { width: 12px; height: 12px; border-radius: 50%; }
+.window .titlebar i:nth-child(1) { background: #ff5f57; }
+.window .titlebar i:nth-child(2) { background: #febc2e; }
+.window .titlebar i:nth-child(3) { background: #28c840; }
+.window .titlebar span { margin: 0 auto; transform: translateX(-30px); font-size: 12px; color: #a9bfc2; font-weight: 600; }
+.window img { display: block; width: 100%; height: auto; }
+.features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.feature { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.feature h3 { margin: 0 0 4px; font-size: 15.5px; }
+.feature p { margin: 0; color: var(--muted); font-size: 14px; }
+@media (max-width: 860px) { .features { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .features { grid-template-columns: 1fr; } }
 .changelog-section { padding-top: 40px; }
 .changelog { border: 1px solid var(--line); border-radius: 12px; background: var(--card); font-size: 14.5px; }
 .changelog summary { cursor: pointer; padding: 12px 16px; color: var(--muted); font-weight: 600; }
@@ -294,6 +308,32 @@ footer .wrap { display: flex; gap: 8px 20px; flex-wrap: wrap; justify-content: s
       <div class="cue"><h3><span class="kinds"><span class="dot done"></span><span class="dot failed"></span><span class="dot input"></span></span> Three outcomes</h3><p>Green when Claude is done, red when a turn fails (rate limits, API errors), blue when it needs your permission or an answer. Switch each one off, or keep just its sound or just its banner, with its own sound and timing.</p></div>
       <div class="cue"><h3>Click to jump back</h3><p>The banner names the project and the app running the session. A click brings that terminal or editor to the front. Several sessions stack instead of overwriting each other.</p></div>
       <div class="cue"><h3>Quiet when you're there</h3><p>If you're already looking at the app running that session, nothing pops up. Successes fade after 10 seconds; failures and questions stay until you dismiss them.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="settings">
+  <div class="wrap">
+    <h2>Make it yours</h2>
+    <p class="lede">Every event gets its own switches, sound and timing. Set it up once in Settings, then forget about it.</p>
+
+    <figure class="window">
+      <div class="titlebar"><i></i><i></i><i></i><span>Botler</span></div>
+      <picture>
+        <source srcset="img/settings-dark.png" media="(prefers-color-scheme: dark)">
+        <img src="img/settings-light.png" width="900" height="506" loading="lazy" alt="Botler settings. General: banner position, only when I'm elsewhere, menu bar flash, menu bar icon, start at login. AI tools: Claude Code hooks installed. Notifications: Done, Failed and Needs input, each with a notification toggle, how long it stays, and a sound. Needs input plays a custom sound without showing a notification.">
+      </picture>
+    </figure>
+
+    <div class="features">
+      <div class="feature"><h3>Pick what each event does</h3><p>Switch Done, Failed or Needs input off entirely, or keep just the notification, just the sound, or both.</p></div>
+      <div class="feature"><h3>A sound per event</h3><p>Choose any macOS system sound for each event and preview it with ▶. Hear the difference between “done” and “stuck” without looking.</p></div>
+      <div class="feature"><h3>Bring your own sounds</h3><p>Add your own aiff, caf, m4a, mp3 or wav files with ＋. They show up under Custom for every event; remove them with －.</p></div>
+      <div class="feature"><h3>Stay as long as you like</h3><p>Let a notification hide after 5, 10, 30 or 60 seconds, or keep it until you click it or press Esc.</p></div>
+      <div class="feature"><h3>Where you want it</h3><p>Top right, top center, top left, bottom right or bottom left, always on the screen you're working on.</p></div>
+      <div class="feature"><h3>Quiet when you're watching</h3><p>Skip notifications while the app running that session is already in front of you.</p></div>
+      <div class="feature"><h3>Menu bar your way</h3><p>Show the icon always, only while notifying, or never, and choose whether it flashes Done, Error or Needs you.</p></div>
+      <div class="feature"><h3>Ready when you are</h3><p>Start at login, and connect or disconnect each AI tool's hooks with one click.</p></div>
     </div>
   </div>
 </section>

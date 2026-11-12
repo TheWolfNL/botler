@@ -52,7 +52,7 @@ func runApp() error {
 	settings := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:          "settings",
 		Title:         "Botler",
-		Width:         460,
+		Width:         900,
 		Height:        640,
 		Hidden:        true,
 		DisableResize: true,

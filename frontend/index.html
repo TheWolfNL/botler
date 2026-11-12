@@ -27,41 +27,45 @@
     </section>
 
     <form id="settings">
-        <h2>Notifications</h2>
-        <div class="card" id="kinds"></div>
+        <div class="col">
+            <h2>General</h2>
+            <div class="card">
+                <label class="row">Position
+                    <select name="bannerPosition">
+                        <option value="topRight">Top right</option>
+                        <option value="topCenter">Top center</option>
+                        <option value="topLeft">Top left</option>
+                        <option value="bottomRight">Bottom right</option>
+                        <option value="bottomLeft">Bottom left</option>
+                    </select>
+                </label>
+                <label class="row"><input type="checkbox" name="onlyWhenAway"/>
+                    <span>Only when I'm elsewhere<small>Stay quiet while the app running that session is in front</small></span>
+                </label>
+                <label class="row"><input type="checkbox" name="trayFlash"/> Flash the status in the menu bar</label>
+                <label class="row">Menu bar icon
+                    <select name="trayMode">
+                        <option value="always">Always</option>
+                        <option value="onNotify">Only while notifying</option>
+                        <option value="never">Never</option>
+                    </select>
+                </label>
+                <label class="row"><input type="checkbox" name="launchAtLogin"/> Start at login</label>
+            </div>
 
-        <h2>General</h2>
-        <div class="card">
-            <label class="row">Position
-                <select name="bannerPosition">
-                    <option value="topRight">Top right</option>
-                    <option value="topCenter">Top center</option>
-                    <option value="topLeft">Top left</option>
-                    <option value="bottomRight">Bottom right</option>
-                    <option value="bottomLeft">Bottom left</option>
-                </select>
-            </label>
-            <label class="row"><input type="checkbox" name="onlyWhenAway"/>
-                <span>Only when I'm elsewhere<small>Stay quiet while the app running that session is in front</small></span>
-            </label>
-            <label class="row"><input type="checkbox" name="trayFlash"/> Flash the status in the menu bar</label>
-            <label class="row">Menu bar icon
-                <select name="trayMode">
-                    <option value="always">Always</option>
-                    <option value="onNotify">Only while notifying</option>
-                    <option value="never">Never</option>
-                </select>
-            </label>
-            <label class="row"><input type="checkbox" name="launchAtLogin"/> Start at login</label>
+            <h2>AI tools</h2>
+            <div class="card">
+                <div id="agents"></div>
+                <div class="row">
+                    <span>Using another AI tool?<small>Codex, Gemini CLI, Cursor… ask for it on GitHub</small></span>
+                    <button type="button" id="request-agent">Request it</button>
+                </div>
+            </div>
         </div>
 
-        <h2>AI tools</h2>
-        <div class="card">
-            <div id="agents"></div>
-            <div class="row">
-                <span>Using another AI tool?<small>Codex, Gemini CLI, Cursor… ask for it on GitHub</small></span>
-                <button type="button" id="request-agent">Request it</button>
-            </div>
+        <div class="col">
+            <h2>Notifications</h2>
+            <div class="card" id="kinds"></div>
         </div>
     </form>
 

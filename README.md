@@ -4,6 +4,8 @@ A macOS menu-bar butler that tells you when your AI coding agent is done, hit an
 
 Website: https://thewolfnl.github.io/botler/ (source in `docs/`, deployed by `.github/workflows/pages.yml`).
 
+![Botler settings: per-event notification and sound toggles, sound choice and timing, banner position, menu bar options and AI tool hooks](docs/img/settings-light.png)
+
 ## How it works
 
 Claude Code [hooks](https://code.claude.com/docs/en/hooks) run `botler hook claude` with the event as JSON on stdin:
